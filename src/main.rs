@@ -239,13 +239,12 @@ fn print_field_or_terse_error(target_field_key: &str, absolute_toml_file_path: &
 fn terse_error_code(error_variant: ReadTomlFieldError) -> &'static str {
     match error_variant {
         ReadTomlFieldError::RsLsfEmptyKey => "E_EMPTY_KEY",
-        ReadTomlFieldError::RsLsfKeyTooLong => "E_KEY_TOO_LONG",
         ReadTomlFieldError::RsLsfOutputBufferZeroSized => "E_OUTBUF_ZERO",
         ReadTomlFieldError::RsLsfFileOpenFailed => "E_OPEN",
         ReadTomlFieldError::RsLsfFileReadFailed => "E_READ",
         ReadTomlFieldError::RsLsfFieldNotFound => "E_NOT_FOUND",
         ReadTomlFieldError::RsLsfValueExceedsOutputBuffer => "E_VALUE_TOO_BIG",
-        ReadTomlFieldError::RsLsfMatchingLineExceedsScanBuffer => "E_LINE_TOO_BIG",
+        ReadTomlFieldError::RsLsfValueUnterminatedAtEndOfFile => "AT_EOF",
         ReadTomlFieldError::RsLsfSafetyBudgetExhausted => "E_SAFETY_BUDGET",
     }
 }
