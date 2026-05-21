@@ -19,9 +19,46 @@
 //! static memory budgeting, complicates real-time guarantees, and obscures the
 //! true memory footprint of the program.
 //!
+//! If the scope of the task is to read a single small value
+//! contingent on a small key in a .toml file line,
+//! then that process to do that should:
+//! - not use heap memory at all
+//! - not read the entire file into memory
+//! - not read the entire line into memory
+//! - not read any large chunk of key + value into memory
+//! - not read the key more than one byte at a time
+//! - not use more than a one multi-byte buffer sanitized to be no larger
+//!   than a the value: two buffers, one single-byte buffer
+//!   and one multi-byte buffer (e.g. sized to fit the value).
+//!
+//! For security and efficiency no more than what is needed should be
+//! loaded or read, and what initial "reading" only requires a single byte
+//! (a one-byte buffer).
+//!
 //! This module exposes a single function,
 //! [`read_single_line_string_field_from_toml_no_heap`], that reads a single
 //! short-string field from a TOML file using only stack-allocated buffers.
+//!
+//! # Memory Sanitation
+//!
+//! Bounding a buffer to the smallest size the task actually requires is
+//! a form of input sanitation: input that exceeds what the task is meant
+//! to handle cannot enter, because there is nowhere to put it. The
+//! const-generic `OUTPUT_BUFFER_BYTES` and the `RsLsfValueExceedsOutputBuffer`
+//! error together make oversize values unrepresentable rather than
+//! silently absorbed. Buffers that read in more bytes than the task
+//! requires (e.g. `BufReader`'s ~8 KiB default, or "read the whole line
+//! and sort it out later") are a sanitation failure in the same family
+//! as unbounded reads and over-sized allocations — Heartbleed being a
+//! well-known example of the broader class. This module bounds every
+//! buffer to the smallest size the task genuinely needs: one byte for
+//! reading from the file, and exactly `OUTPUT_BUFFER_BYTES` for the
+//! value being returned.
+//!
+//! This is in the same spirit as the combined security and efficiency
+//! of using enums and structs in Rust to require inputs to be very
+//! strictly only what they are safe to be: hygiene and sanitation for
+//! economics, efficiency, maintainability, modularity, and security.
 //!
 //! # Architecture
 //!
@@ -39,7 +76,9 @@
 //!   * two `u64` failsafe counters (bytes scanned, iteration count)
 //!
 //! Total module-internal scratch: a few words. The key itself is never copied
-//! anywhere — it is compared against `target_field_key.as_bytes()` in place,
+//! anywhere (the key is not read into memory or a buffer, it is 'scanned'
+//! one byte at a time),
+//! it is compared against `target_field_key.as_bytes()` in place,
 //! index by index.
 //!
 //! # In Scope
