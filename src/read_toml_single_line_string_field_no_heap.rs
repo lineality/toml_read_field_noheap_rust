@@ -2,6 +2,8 @@
 //! Module: read_toml_single_line_string_field_no_heap
 //! ============================================================================
 //!
+//! https://github.com/lineality/toml_read_field_noheap_rust
+//!
 //! # Project Context (Strategic Scope)
 //!
 //! Many production deployments need to read a handful of short configuration
