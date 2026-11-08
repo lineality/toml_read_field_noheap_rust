@@ -1,6 +1,11 @@
 //! # read_toml_single_line_string_field_no_heap.rs
 //! Functionality: Read Single Line String Field = rslsf
 //!
+//! ## Error/Mode Policy:
+//! https://github.com/lineality/rust_lang_rules
+//! https://github.com/lineality/modes_and_case_handling
+//! https://github.com/lineality/modes_and_case_handling/blob/main/mode_case_handling_framework_summary.md
+//!
 //! Source: https://github.com/lineality/toml_read_field_noheap_rust
 //!
 //! ## Purpose
