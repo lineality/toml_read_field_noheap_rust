@@ -74,11 +74,11 @@
 //! The scanner works on any `Read`; the public functions give it an
 //! unbuffered `File`, and tests give it in-memory input.
 //!
-//! ## Error codes
+//! ## RSLSF Error codes
 //! Codes 801-816 are used; 817-849 are reserved for the matching config
-//! writer. Numbers come from the HIX config block (800-849), so they are kept
-//! unchanged when this module is merged into HIX. The table is in the
-//! `ReadTomlFieldError` doc comment.
+//! writer. Numbers range from 800-849 so that they may often be kept
+//! unchanged when this module is merged into a parent project in development.
+//! The table is in the `ReadTomlFieldError` doc comment.
 //!
 //! ## Modes
 //! - Production-release: never panics, never allocates; errors are 2-byte codes;
