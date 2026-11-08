@@ -24,6 +24,9 @@ This is a small very-modular module that should be easy to incorperate
 into other projects, either added to a simple flat-file project or added
 to a set of separate module files.
 
+Despite a focus on TOML here, this system should be able to be easily 
+modified to be used with any format of config file (for single line fields).
+
 The error and error-code system follows this production-oriented system:
 https://github.com/lineality/modes_and_case_handling
 

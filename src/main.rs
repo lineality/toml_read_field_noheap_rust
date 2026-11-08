@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! # main.rs: Read Single Line String Field = rslsf: rslsf_demo
+//! # main.rs: Read Single Line Field = rslf: rslf_demo
 //!
 //! Demonstrates and smoke-tests the no-heap TOML field reader against real files.
 //!
@@ -35,7 +35,7 @@ const DEMO_OUTPUT_BUFFER_BYTES: usize = 16;   // demo's choice, not the module's
 The configurable length is passed to the function as a const generic at the call site:
 
 ```rust
-read_single_line_string_field_from_toml_no_heap::<DEMO_OUTPUT_BUFFER_BYTES>(path, "node_id")
+read_single_line_field_from_toml_no_heap::<DEMO_OUTPUT_BUFFER_BYTES>(path, "node_id")
 //                                                ^^^^^^^^^^^^^^^^^^^^^^^^
 //                                                Here is the "knob"
 ```
@@ -64,8 +64,8 @@ per read call, and lines are never assembled. So line length does not matter;
 only the matched value must fit the output buffer.
 
 Limits (counts, not buffers; they bound work, not memory):
-- `RSLSF_MAX_BYTES_SCANNED` (1 MiB): a larger file stops with code 810.
-- `RSLSF_EXTRA_READ_CALLS` (1024): allowance for "interrupted" reads (code 809).
+- `RSLF_MAX_BYTES_SCANNED` (1 MiB): a larger file stops with code 810.
+- `RSLF_EXTRA_READ_CALLS` (1024): allowance for "interrupted" reads (code 809).
 
 Tradeoff of the one-byte design: one read syscall per byte. For a small
 config file read a few times at startup this is negligible. A large file read
@@ -80,16 +80,16 @@ OK  mode = production
 OK  port = 8080
 ERR missing_key code 811
 OK  port as u16 = 8080
-OK  data_directory as Path = /tmp/rslsf_demo_data
+OK  data_directory as Path = /tmp/rslf_demo_data
 OK  text = production
 ERR longtext code 812
 */
 
-mod read_toml_single_line_string_field_no_heap;
+mod read_toml_single_line_field_no_heap;
 
-use read_toml_single_line_string_field_no_heap::{
+use read_toml_single_line_field_no_heap::{
     ReadTomlFieldError, check_toml_keys_are_unique_no_heap,
-    read_single_line_string_field_from_toml_no_heap,
+    read_single_line_field_from_toml_no_heap,
 };
 use std::io::Write;
 use std::path::Path;
@@ -99,18 +99,18 @@ use std::path::Path;
 const DEMO_OUTPUT_BUFFER_BYTES: usize = 16;
 
 /// Demo TOML file name, written under the OS temp directory.
-const DEMO_TOML_FILE_NAME: &str = "rslsf_demo_config.toml";
+const DEMO_TOML_FILE_NAME: &str = "rslf_demo_config.toml";
 
 /// Demo TOML contents, within the module's supported subset.
 /// `data_directory` exists to demonstrate reading a value as a path.
 const DEMO_TOML_FILE_CONTENTS: &str = "\
-# rslsf_demo: sample configuration
+# rslf_demo: sample configuration
 # This file is overwritten on every run.
 
 node_id        = \"alice-node-01\"
 mode           = \"production\"
 port           = 8080
-data_directory = \"/tmp/rslsf_demo_data\"
+data_directory = \"/tmp/rslf_demo_data\"
 ";
 
 /// Keys checked by the optional uniqueness check.
@@ -131,7 +131,7 @@ fn main() {
         .and_then(|mut demo_file| demo_file.write_all(DEMO_TOML_FILE_CONTENTS.as_bytes()));
     if write_result.is_err() {
         // Terse: no path, no OS error.
-        eprintln!("rslsf_demo: setup failed");
+        eprintln!("rslf_demo: setup failed");
         std::process::exit(EXIT_DEMO_SETUP_FAILED);
     }
 
@@ -157,7 +157,7 @@ fn main() {
     let user_test_file_path = match std::env::current_dir() {
         Ok(current_directory) => current_directory.join(USER_TEST_TOML_FILE_NAME),
         Err(_) => {
-            eprintln!("rslsf_demo: setup failed");
+            eprintln!("rslf_demo: setup failed");
             std::process::exit(EXIT_DEMO_SETUP_FAILED);
         }
     };
@@ -189,7 +189,7 @@ fn main() {
 /// accepts any bytes is `std::os::unix::ffi::OsStrExt::from_bytes`.
 fn demonstrate_typed_values(absolute_toml_file_path: &Path) {
     // Integer: read into a small buffer, then text, then u16.
-    match read_single_line_string_field_from_toml_no_heap::<8>(absolute_toml_file_path, "port") {
+    match read_single_line_field_from_toml_no_heap::<8>(absolute_toml_file_path, "port") {
         Ok((output_buffer, written_length)) => {
             let parsed_port = output_buffer
                 .get(..written_length)
@@ -204,7 +204,7 @@ fn demonstrate_typed_values(absolute_toml_file_path: &Path) {
     }
 
     // Path: read into a path-sized buffer, then text, then Path (must be absolute).
-    match read_single_line_string_field_from_toml_no_heap::<4096>(
+    match read_single_line_field_from_toml_no_heap::<4096>(
         absolute_toml_file_path,
         "data_directory",
     ) {
@@ -237,7 +237,7 @@ fn demonstrate_typed_values(absolute_toml_file_path: &Path) {
 /// with `EXIT_READ_FAILED`. Production callers apply their own recovery
 /// policy per code and do not terminate.
 fn print_field_or_terse_error(target_field_key: &str, absolute_toml_file_path: &Path) {
-    let read_result = read_single_line_string_field_from_toml_no_heap::<DEMO_OUTPUT_BUFFER_BYTES>(
+    let read_result = read_single_line_field_from_toml_no_heap::<DEMO_OUTPUT_BUFFER_BYTES>(
         absolute_toml_file_path,
         target_field_key,
     );
@@ -254,7 +254,7 @@ fn print_field_or_terse_error(target_field_key: &str, absolute_toml_file_path: &
         }
         Err(error_code) => {
             println!("ERR {} code {}", target_field_key, error_code.code());
-            if error_code != ReadTomlFieldError::RsLsfFieldNotFound {
+            if error_code != ReadTomlFieldError::RSLFFieldNotFound {
                 std::process::exit(EXIT_READ_FAILED);
             }
         }
